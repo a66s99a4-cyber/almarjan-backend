@@ -4,7 +4,8 @@ const router = express.Router()
 const bookingController = require("../controllers/bookingController")
 const { protect, adminOnly } = require("../middleware/authMiddleware")
 
-router.post("/", protect, bookingController.createBooking)
+router.post("/", bookingController.createBooking)
+
 router.get("/my-bookings", protect, bookingController.getMyBookings)
 
 router.get("/admin", protect, adminOnly, bookingController.getAllBookings)

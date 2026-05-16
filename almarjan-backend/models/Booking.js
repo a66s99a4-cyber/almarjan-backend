@@ -4,23 +4,58 @@ const bookingSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
+      default: null
     },
-    customerName: String,
-    phone: String,
+
+    customerName: {
+      type: String,
+      required: true
+    },
+
+    phone: {
+      type: String,
+      required: true
+    },
 
     area: String,
     propertyType: String,
     cleaningType: String,
 
+    rooms: {
+      type: Number,
+      default: 0
+    },
+
+    tankCleaning: {
+      type: Boolean,
+      default: false
+    },
+
     locationLink: String,
     areaName: String,
     houseNumber: String,
 
-    date: String,
-    time: String,
+    date: {
+      type: String,
+      required: true
+    },
 
-    price: Number,
+    price: {
+      type: Number,
+      default: 0
+    },
+
+    cost: {
+      type: Number,
+      default: 0
+    },
+
+    profit: {
+      type: Number,
+      default: 0
+    },
+
     notes: String,
 
     paymentMethod: {

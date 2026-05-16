@@ -28,13 +28,23 @@ const getStats = async (req, res) => {
       return total + Number(booking.price || 0)
     }, 0)
 
+    const totalCost = paidBookings.reduce((total, booking) => {
+      return total + Number(booking.cost || 0)
+    }, 0)
+
+    const netProfit = paidBookings.reduce((total, booking) => {
+      return total + Number(booking.profit || 0)
+    }, 0)
+
     res.json({
       visitorsCount,
       usersCount,
       bookingsCount,
       completedBookings,
       paidBookingsCount: paidBookings.length,
-      income
+      income,
+      totalCost,
+      netProfit
     })
   } catch (error) {
     res.status(500).json({ message: "Stats error", error: error.message })

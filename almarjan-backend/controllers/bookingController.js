@@ -3,46 +3,93 @@ const Price = require("../models/Price")
 
 const createBooking = async (req, res) => {
   try {
-    let finalPrice = null
+    const {
+      customerName,
+      phone,
+      area,
+      propertyType,
+      cleaningType,
+      rooms,
+      tankCleaning,
+      locationLink,
+      areaName,
+      houseNumber,
+      date,
+      notes,
+      paymentMethod
+    } = req.body
 
-    if (req.body.cleaningType === "Basic") {
+    if (!customerName || !phone || !date) {
+      return res.status(400).json({
+        message: "Customer name, phone, and date are required"
+      })
+    }
+
+    let finalPrice = 0
+    let finalCost = 0
+
+    if (cleaningType === "Basic") {
       const priceDoc = await Price.findOne({
-        area: req.body.area,
-        propertyType: req.body.propertyType,
+        area,
+        propertyType,
         cleaningType: "Basic"
       })
 
-      if (priceDoc) {
-        finalPrice = priceDoc.price
+      if (!priceDoc) {
+        return res.status(404).json({
+          message: "Price not found for selected area and property type"
+        })
       }
+
+      const roomsNumber = Number(rooms || 0)
+      const tankSelected = tankCleaning === true || tankCleaning === "true"
+
+      finalPrice =
+        Number(priceDoc.price || 0) +
+        roomsNumber * Number(priceDoc.roomPrice || 0) +
+        (tankSelected ? Number(priceDoc.tankCleaningPrice || 0) : 0)
+
+      finalCost = Number(priceDoc.cost || 0)
     }
 
+    const profit = finalPrice - finalCost
+
     const booking = await Booking.create({
-      user: req.user.id,
-      customerName: req.user.name,
-      phone: req.user.phone,
+      user: req.user?.id || null,
 
-      area: req.body.area,
-      propertyType: req.body.propertyType,
-      cleaningType: req.body.cleaningType,
+      customerName,
+      phone,
 
-      locationLink: req.body.locationLink,
-      areaName: req.body.areaName,
-      houseNumber: req.body.houseNumber,
+      area,
+      propertyType,
+      cleaningType,
 
-      date: req.body.date,
-      time: req.body.time,
+      rooms: Number(rooms || 0),
+      tankCleaning: tankCleaning === true || tankCleaning === "true",
+
+      locationLink,
+      areaName,
+      houseNumber,
+
+      date,
+
       price: finalPrice,
-      notes: req.body.notes,
+      cost: finalCost,
+      profit,
 
-      paymentMethod: req.body.paymentMethod || "whatsapp",
+      notes,
+
+      paymentMethod: paymentMethod || "whatsapp",
       paymentStatus: "pending",
       status: "pending"
     })
 
     res.status(201).json(booking)
   } catch (error) {
-    res.status(500).json({ message: "Booking error", error: error.message })
+    res.status(500).json({
+      message: "Booking error",
+      error: error.message
+    })
   }
 }
 

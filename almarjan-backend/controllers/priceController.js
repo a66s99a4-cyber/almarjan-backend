@@ -2,7 +2,7 @@ const Price = require("../models/Price")
 
 const getPrice = async (req, res) => {
   try {
-    const { area, propertyType, cleaningType } = req.query
+    const { area, propertyType, cleaningType, rooms, tankCleaning } = req.query
 
     if (!area || !propertyType || !cleaningType) {
       return res.status(400).json({
@@ -20,7 +20,18 @@ const getPrice = async (req, res) => {
       return res.status(404).json({ message: "Price not found" })
     }
 
-    res.json(price)
+    const roomsNumber = Number(rooms || 0)
+    const tankSelected = tankCleaning === "true"
+
+    const finalPrice =
+      Number(price.price || 0) +
+      roomsNumber * Number(price.roomPrice || 0) +
+      (tankSelected ? Number(price.tankCleaningPrice || 0) : 0)
+
+    res.json({
+      ...price.toObject(),
+      finalPrice
+    })
   } catch (error) {
     res.status(500).json({
       message: "Price error",
@@ -62,11 +73,31 @@ const getOptions = async (req, res) => {
 
 const createPrice = async (req, res) => {
   try {
-    const { area, propertyType, cleaningType, price } = req.body
+    const {
+      area,
+      propertyType,
+      cleaningType,
+      price,
+      cost,
+      roomPrice,
+      tankCleaningPrice
+    } = req.body
 
-    if (!area || !propertyType || !cleaningType || !price) {
+    if (!area || !propertyType || !cleaningType || price === "") {
       return res.status(400).json({
-        message: "All fields are required"
+        message: "Area, property type, cleaning type, and price are required"
+      })
+    }
+
+    const existingPrice = await Price.findOne({
+      area,
+      propertyType,
+      cleaningType
+    })
+
+    if (existingPrice) {
+      return res.status(400).json({
+        message: "This price already exists. Delete it or update it instead."
       })
     }
 
@@ -74,7 +105,10 @@ const createPrice = async (req, res) => {
       area,
       propertyType,
       cleaningType,
-      price: Number(price)
+      price: Number(price),
+      cost: Number(cost || 0),
+      roomPrice: Number(roomPrice || 0),
+      tankCleaningPrice: Number(tankCleaningPrice || 0)
     })
 
     res.status(201).json(newPrice)
@@ -88,16 +122,26 @@ const createPrice = async (req, res) => {
 
 const updatePrice = async (req, res) => {
   try {
-    const { id } = req.params
-    const { area, propertyType, cleaningType, price } = req.body
+    const {
+      area,
+      propertyType,
+      cleaningType,
+      price,
+      cost,
+      roomPrice,
+      tankCleaningPrice
+    } = req.body
 
     const updatedPrice = await Price.findByIdAndUpdate(
-      id,
+      req.params.id,
       {
         area,
         propertyType,
         cleaningType,
-        price: Number(price)
+        price: Number(price),
+        cost: Number(cost || 0),
+        roomPrice: Number(roomPrice || 0),
+        tankCleaningPrice: Number(tankCleaningPrice || 0)
       },
       { new: true }
     )
@@ -117,9 +161,7 @@ const updatePrice = async (req, res) => {
 
 const deletePrice = async (req, res) => {
   try {
-    const { id } = req.params
-
-    const deletedPrice = await Price.findByIdAndDelete(id)
+    const deletedPrice = await Price.findByIdAndDelete(req.params.id)
 
     if (!deletedPrice) {
       return res.status(404).json({ message: "Price not found" })
