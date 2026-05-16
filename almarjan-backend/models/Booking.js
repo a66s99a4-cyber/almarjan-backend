@@ -20,16 +20,21 @@ const bookingSchema = new mongoose.Schema(
 
     area: String,
     propertyType: String,
-    cleaningType: String,
 
-    rooms: {
-      type: Number,
-      default: 0
+    cleaningType: {
+      type: String,
+      default: "Basic"
     },
 
     tankCleaning: {
       type: Boolean,
       default: false
+    },
+
+    tankCleaningSize: {
+      type: String,
+      enum: ["none", "small", "large"],
+      default: "none"
     },
 
     locationLink: String,
@@ -54,6 +59,12 @@ const bookingSchema = new mongoose.Schema(
     profit: {
       type: Number,
       default: 0
+    },
+
+    source: {
+      type: String,
+      enum: ["website", "external"],
+      default: "website"
     },
 
     notes: String,

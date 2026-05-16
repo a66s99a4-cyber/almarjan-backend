@@ -30,12 +30,12 @@ const priceSchema = new mongoose.Schema(
       default: 0
     },
 
-    roomPrice: {
+    smallTankCleaningPrice: {
       type: Number,
       default: 0
     },
 
-    tankCleaningPrice: {
+    largeTankCleaningPrice: {
       type: Number,
       default: 0
     }

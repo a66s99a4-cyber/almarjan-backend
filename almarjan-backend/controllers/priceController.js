@@ -2,7 +2,7 @@ const Price = require("../models/Price")
 
 const getPrice = async (req, res) => {
   try {
-    const { area, propertyType, cleaningType, rooms, tankCleaning } = req.query
+    const { area, propertyType, cleaningType, tankCleaningSize } = req.query
 
     if (!area || !propertyType || !cleaningType) {
       return res.status(400).json({
@@ -20,13 +20,17 @@ const getPrice = async (req, res) => {
       return res.status(404).json({ message: "Price not found" })
     }
 
-    const roomsNumber = Number(rooms || 0)
-    const tankSelected = tankCleaning === "true"
+    let tankPrice = 0
 
-    const finalPrice =
-      Number(price.price || 0) +
-      roomsNumber * Number(price.roomPrice || 0) +
-      (tankSelected ? Number(price.tankCleaningPrice || 0) : 0)
+    if (tankCleaningSize === "small") {
+      tankPrice = Number(price.smallTankCleaningPrice || 0)
+    }
+
+    if (tankCleaningSize === "large") {
+      tankPrice = Number(price.largeTankCleaningPrice || 0)
+    }
+
+    const finalPrice = Number(price.price || 0) + tankPrice
 
     res.json({
       ...price.toObject(),
@@ -79,8 +83,8 @@ const createPrice = async (req, res) => {
       cleaningType,
       price,
       cost,
-      roomPrice,
-      tankCleaningPrice
+      smallTankCleaningPrice,
+      largeTankCleaningPrice
     } = req.body
 
     if (!area || !propertyType || !cleaningType || price === "") {
@@ -107,8 +111,8 @@ const createPrice = async (req, res) => {
       cleaningType,
       price: Number(price),
       cost: Number(cost || 0),
-      roomPrice: Number(roomPrice || 0),
-      tankCleaningPrice: Number(tankCleaningPrice || 0)
+      smallTankCleaningPrice: Number(smallTankCleaningPrice || 0),
+      largeTankCleaningPrice: Number(largeTankCleaningPrice || 0)
     })
 
     res.status(201).json(newPrice)
@@ -128,8 +132,8 @@ const updatePrice = async (req, res) => {
       cleaningType,
       price,
       cost,
-      roomPrice,
-      tankCleaningPrice
+      smallTankCleaningPrice,
+      largeTankCleaningPrice
     } = req.body
 
     const updatedPrice = await Price.findByIdAndUpdate(
@@ -140,8 +144,8 @@ const updatePrice = async (req, res) => {
         cleaningType,
         price: Number(price),
         cost: Number(cost || 0),
-        roomPrice: Number(roomPrice || 0),
-        tankCleaningPrice: Number(tankCleaningPrice || 0)
+        smallTankCleaningPrice: Number(smallTankCleaningPrice || 0),
+        largeTankCleaningPrice: Number(largeTankCleaningPrice || 0)
       },
       { new: true }
     )

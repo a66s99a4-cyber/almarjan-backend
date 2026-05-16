@@ -9,14 +9,19 @@ const createBooking = async (req, res) => {
       area,
       propertyType,
       cleaningType,
-      rooms,
-      tankCleaning,
+      tankCleaningSize,
       locationLink,
       areaName,
       houseNumber,
       date,
       notes,
-      paymentMethod
+      paymentMethod,
+      source,
+      price,
+      cost,
+      profit,
+      paymentStatus,
+      status
     } = req.body
 
     if (!customerName || !phone || !date) {
@@ -25,34 +30,42 @@ const createBooking = async (req, res) => {
       })
     }
 
-    let finalPrice = 0
-    let finalCost = 0
+    let finalPrice = Number(price || 0)
+    let finalCost = Number(cost || 0)
 
-    if (cleaningType === "Basic") {
-      const priceDoc = await Price.findOne({
-        area,
-        propertyType,
-        cleaningType: "Basic"
-      })
-
-      if (!priceDoc) {
-        return res.status(404).json({
-          message: "Price not found for selected area and property type"
+    if (!source || source === "website") {
+      if (cleaningType === "Basic") {
+        const priceDoc = await Price.findOne({
+          area,
+          propertyType,
+          cleaningType: "Basic"
         })
+
+        if (!priceDoc) {
+          return res.status(404).json({
+            message: "Price not found for selected area and property type"
+          })
+        }
+
+        let tankPrice = 0
+
+        if (tankCleaningSize === "small") {
+          tankPrice = Number(priceDoc.smallTankCleaningPrice || 0)
+        }
+
+        if (tankCleaningSize === "large") {
+          tankPrice = Number(priceDoc.largeTankCleaningPrice || 0)
+        }
+
+        finalPrice = Number(priceDoc.price || 0) + tankPrice
+        finalCost = Number(priceDoc.cost || 0)
       }
-
-      const roomsNumber = Number(rooms || 0)
-      const tankSelected = tankCleaning === true || tankCleaning === "true"
-
-      finalPrice =
-        Number(priceDoc.price || 0) +
-        roomsNumber * Number(priceDoc.roomPrice || 0) +
-        (tankSelected ? Number(priceDoc.tankCleaningPrice || 0) : 0)
-
-      finalCost = Number(priceDoc.cost || 0)
     }
 
-    const profit = finalPrice - finalCost
+    const finalProfit =
+      profit !== undefined
+        ? Number(profit || 0)
+        : Number(finalPrice || 0) - Number(finalCost || 0)
 
     const booking = await Booking.create({
       user: req.user?.id || null,
@@ -62,10 +75,10 @@ const createBooking = async (req, res) => {
 
       area,
       propertyType,
-      cleaningType,
+      cleaningType: cleaningType || "Basic",
 
-      rooms: Number(rooms || 0),
-      tankCleaning: tankCleaning === true || tankCleaning === "true",
+      tankCleaningSize: tankCleaningSize || "none",
+      tankCleaning: tankCleaningSize === "small" || tankCleaningSize === "large",
 
       locationLink,
       areaName,
@@ -75,13 +88,14 @@ const createBooking = async (req, res) => {
 
       price: finalPrice,
       cost: finalCost,
-      profit,
+      profit: finalProfit,
 
+      source: source || "website",
       notes,
 
       paymentMethod: paymentMethod || "whatsapp",
-      paymentStatus: "pending",
-      status: "pending"
+      paymentStatus: paymentStatus || "pending",
+      status: status || "pending"
     })
 
     res.status(201).json(booking)
